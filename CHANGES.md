@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### New
 
+### Changed
+
+### Fixed
+
+## 0.1.0 - 2026-03-04
+### New
 - Initial migration from oegig-plugins to Checkmk 2.3.x v2 API
 - Single SNMPSection with 11 SNMP tree fetches
 - 11 check plugins: Power System Status, Power System Mode, Mains Voltage,
@@ -18,6 +24,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Metric names prefixed with `oposs_eltek_` for namespace isolation
 - SNMP-provided thresholds preserved from device configuration
 
-### Changed
 
-### Fixed
