@@ -300,17 +300,15 @@ def check_oposs_eltek_sp2_mains_voltage(
     data = section.get("mains_voltage", {}).get(item)
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]),
-        levels_upper=(float(data["warnUp"]), float(data["critUp"])),
-        levels_lower=(float(data["warnLow"]), float(data["critLow"])),
+        levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
+        levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_voltage",
         render_func=lambda v: "%.0f V (status %s)" % (v, stateInfo(data["state"])),
         label="Mains Voltage",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_mains_voltage = CheckPlugin(
@@ -410,16 +408,14 @@ def check_oposs_eltek_sp2_rectifier_current(
     data = section.get("rectifier_current")
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]) / 10.0,
-        levels_upper=(float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0),
+        levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
         render_func=lambda v: "%.2f A (status %s)" % (v, stateInfo(data["state"])),
         label="Rectifier Current",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_rectifier_current = CheckPlugin(
@@ -448,16 +444,14 @@ def check_oposs_eltek_sp2_rectifier_capacity(
     data = section.get("rectifier_capacity")
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]),
-        levels_upper=(float(data["warnUp"]), float(data["critUp"])),
+        levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_capacity_pct",
         render_func=lambda v: "%.0f %% (status %s)" % (v, stateInfo(data["state"])),
         label="Rectifier Capacity",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_rectifier_capacity = CheckPlugin(
@@ -486,16 +480,14 @@ def check_oposs_eltek_sp2_rectifier_errors(
     data = section.get("rectifier_errors")
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]),
-        levels_upper=(float(data["warnUp"]), float(data["critUp"])),
+        levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_errors",
         render_func=lambda v: "%.0f Errors (status %s)" % (v, stateInfo(data["state"])),
         label="Rectifier Errors",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_rectifier_errors = CheckPlugin(
@@ -524,17 +516,15 @@ def check_oposs_eltek_sp2_rectifier_temperature(
     data = section.get("rectifier_temperature")
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]),
-        levels_upper=(float(data["warnUp"]), float(data["critUp"])),
-        levels_lower=(float(data["warnLow"]), float(data["critLow"])),
+        levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
+        levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_temperature",
         render_func=lambda v: "%.0f C (status %s)" % (v, stateInfo(data["state"])),
         label="Rectifier Temperature",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_rectifier_temperature = CheckPlugin(
@@ -604,16 +594,14 @@ def check_oposs_eltek_sp2_load_current(
     data = section.get("load_current")
     if not data:
         return
-    result, metric = check_levels(
+    yield from check_levels(
         value=float(data["value"]) / 10.0,
-        levels_upper=(float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0),
+        levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
         render_func=lambda v: "%.2f A (status %s)" % (v, stateInfo(data["state"])),
         label="Load Current",
     )
-    yield result
-    yield metric
 
 
 check_plugin_oposs_eltek_sp2_load_current = CheckPlugin(
