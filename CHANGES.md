@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 ### Fixed
+
+## 0.1.1 - 2026-04-27
+### Fixed
 - Metric translations for legacy `eltek_sp2_*` history are now keyed on
   the new `oposs_eltek_sp2_*` check commands so they actually fire.
   Previously they were keyed on the now-uninstalled legacy commands and
