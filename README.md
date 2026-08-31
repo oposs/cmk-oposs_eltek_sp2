@@ -68,4 +68,4 @@ Expected output contains `Smartpack S`.
 
 ## License
 
-MIT - OETIKER+PARTNER AG
+GNU General Public License v2 - OETIKER+PARTNER AG. See [LICENSE](LICENSE).
