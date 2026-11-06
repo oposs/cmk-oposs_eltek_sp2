@@ -8,7 +8,8 @@ Migrated from oegig-plugins to Checkmk 2.3.x v2 API.
 - `local/lib/python3/cmk_addons/plugins/oposs_eltek_sp2/agent_based/oposs_eltek_sp2.py` — SNMP section + 11 check plugins
 - `local/lib/python3/cmk_addons/plugins/oposs_eltek_sp2/graphing/eltek_sp2.py` — metric, graph, perfometer definitions
 - `.mkp-builder.ini` — MKP packaging config
-- `.github/workflows/release.yml` — automated release workflow
+- `.github/workflows/` — CI and the release flow, callers of oposs/repo-infra (`.github/repo-infra.json` configures them)
+- `tests/` — pytest against the real Checkmk 2.3.0 API (`tests/conftest.py` fetches it)
 
 ## Architecture
 

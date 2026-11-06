@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-from typing import Any, Dict
+from typing import Any
 
 from cmk.agent_based.v2 import (
     CheckPlugin,
@@ -15,6 +13,10 @@ from cmk.agent_based.v2 import (
     check_levels,
     startswith,
 )
+
+# Create release PR writes the released version here (version_files in
+# .github/repo-infra.json)
+__version__ = "0.1.1"
 
 # State mapping from SNMP status values
 stateMap = {
@@ -63,9 +65,9 @@ MODE_MAP = {
 OB = ".1.3.6.1.4.1.12148.10."
 
 
-def parse_oposs_eltek_sp2(string_table: list) -> Dict[str, Any]:
+def parse_oposs_eltek_sp2(string_table: list) -> dict[str, Any]:
     """Parse SNMP data from all 11 trees into a structured dict."""
-    section: Dict[str, Any] = {}
+    section: dict[str, Any] = {}
 
     # 0: Power System Status - scalar, 1 OID
     if string_table[0] and string_table[0][0]:
@@ -150,7 +152,7 @@ def parse_oposs_eltek_sp2(string_table: list) -> Dict[str, Any]:
     rectifiers = {}
     for row in string_table[9]:
         if len(row) >= 5:
-            key = "%s [%s]" % (row[3], row[4].strip())
+            key = f"{row[3]} [{row[4].strip()}]"
             rectifiers[key] = {
                 "state": row[0],
                 "outI": row[1],
@@ -217,21 +219,21 @@ snmp_section_oposs_eltek_sp2 = SNMPSection(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_power_system_status(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "power_system_status" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_power_system_status(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("power_system_status")
     if not data:
         return
     yield Result(
         state=stateValue(data["state"]),
-        summary="status %s" % stateInfo(data["state"]),
+        summary="status {}".format(stateInfo(data["state"])),
     )
 
 
@@ -249,14 +251,14 @@ check_plugin_oposs_eltek_sp2_power_system_status = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_power_system_mode(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "power_system_mode" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_power_system_mode(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("power_system_mode")
     if not data:
@@ -270,7 +272,7 @@ def check_oposs_eltek_sp2_power_system_mode(
         state = State.OK
     yield Result(
         state=state,
-        summary=MODE_MAP.get(mode, "unknown(%s)" % mode),
+        summary=MODE_MAP.get(mode, f"unknown({mode})"),
     )
 
 
@@ -288,14 +290,14 @@ check_plugin_oposs_eltek_sp2_power_system_mode = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_mains_voltage(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     for key in section.get("mains_voltage", {}):
         yield Service(item=key)
 
 
 def check_oposs_eltek_sp2_mains_voltage(
-    item: str, section: Dict[str, Any],
+    item: str, section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("mains_voltage", {}).get(item)
     if not data:
@@ -306,7 +308,7 @@ def check_oposs_eltek_sp2_mains_voltage(
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_voltage",
-        render_func=lambda v: "%.0f V (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.0f} V (status {})".format(v, stateInfo(data["state"])),
         label="Mains Voltage",
     )
 
@@ -325,14 +327,14 @@ check_plugin_oposs_eltek_sp2_mains_voltage = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_mains_failure(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "mains_failure" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_mains_failure(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("mains_failure")
     if not data:
@@ -346,7 +348,7 @@ def check_oposs_eltek_sp2_mains_failure(
         state = State.OK
     yield Result(
         state=state,
-        summary="Number of failed phases: %s" % data["value"],
+        summary="Number of failed phases: {}".format(data["value"]),
     )
 
 
@@ -364,21 +366,21 @@ check_plugin_oposs_eltek_sp2_mains_failure = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_count(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "rectifier_count" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_rectifier_count(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_count")
     if not data:
         return
     yield Result(
         state=State.OK,
-        summary="%s Rectifiers Installed" % data["count"],
+        summary="{} Rectifiers Installed".format(data["count"]),
     )
 
 
@@ -396,14 +398,14 @@ check_plugin_oposs_eltek_sp2_rectifier_count = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_current(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "rectifier_current" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_rectifier_current(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_current")
     if not data:
@@ -413,7 +415,7 @@ def check_oposs_eltek_sp2_rectifier_current(
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "%.2f A (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
         label="Rectifier Current",
     )
 
@@ -432,14 +434,14 @@ check_plugin_oposs_eltek_sp2_rectifier_current = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_capacity(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "rectifier_capacity" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_rectifier_capacity(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_capacity")
     if not data:
@@ -449,7 +451,7 @@ def check_oposs_eltek_sp2_rectifier_capacity(
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_capacity_pct",
-        render_func=lambda v: "%.0f %% (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.0f} % (status {})".format(v, stateInfo(data["state"])),
         label="Rectifier Capacity",
     )
 
@@ -468,14 +470,14 @@ check_plugin_oposs_eltek_sp2_rectifier_capacity = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_errors(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "rectifier_errors" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_rectifier_errors(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_errors")
     if not data:
@@ -485,7 +487,7 @@ def check_oposs_eltek_sp2_rectifier_errors(
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_errors",
-        render_func=lambda v: "%.0f Errors (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.0f} Errors (status {})".format(v, stateInfo(data["state"])),
         label="Rectifier Errors",
     )
 
@@ -504,14 +506,14 @@ check_plugin_oposs_eltek_sp2_rectifier_errors = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_temperature(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "rectifier_temperature" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_rectifier_temperature(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_temperature")
     if not data:
@@ -522,7 +524,7 @@ def check_oposs_eltek_sp2_rectifier_temperature(
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_temperature",
-        render_func=lambda v: "%.0f C (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.0f} C (status {})".format(v, stateInfo(data["state"])),
         label="Rectifier Temperature",
     )
 
@@ -541,22 +543,21 @@ check_plugin_oposs_eltek_sp2_rectifier_temperature = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_rectifier_status(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     for key in section.get("rectifier_status", {}):
         yield Service(item=key)
 
 
 def check_oposs_eltek_sp2_rectifier_status(
-    item: str, section: Dict[str, Any],
+    item: str, section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("rectifier_status", {}).get(item)
     if not data:
         return
     yield Result(
         state=stateValue(data["state"]),
-        summary="Output Current %.2f A / Input Voltage %.0f V (status %s)"
-        % (float(data["outI"]) / 10.0, float(data["inU"]), stateInfo(data["state"])),
+        summary="Output Current {:.2f} A / Input Voltage {:.0f} V (status {})".format(float(data["outI"]) / 10.0, float(data["inU"]), stateInfo(data["state"])),
     )
     yield Metric(
         name="oposs_eltek_current",
@@ -582,14 +583,14 @@ check_plugin_oposs_eltek_sp2_rectifier_status = CheckPlugin(
 # ---------------------------------------------------------------------------
 
 def discover_oposs_eltek_sp2_load_current(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> DiscoveryResult:
     if "load_current" in section:
         yield Service()
 
 
 def check_oposs_eltek_sp2_load_current(
-    section: Dict[str, Any],
+    section: dict[str, Any],
 ) -> CheckResult:
     data = section.get("load_current")
     if not data:
@@ -599,7 +600,7 @@ def check_oposs_eltek_sp2_load_current(
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "%.2f A (status %s)" % (v, stateInfo(data["state"])),
+        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
         label="Load Current",
     )
 
