@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   status after each threshold, as in "warn/crit at 260 V (status
   normal)/275 V (status normal)". The thresholds now read "warn/crit at
   260 V/275 V", and the device status follows once, as "status normal".
+- Power System Status, Rectifier Status and the six measuring services
+  crashed when the device sent a status code the Eltek MIB does not define.
+  Power System Status and Rectifier Status now go UNKNOWN with "status
+  unknown(<code>)"; the measuring services show the same text and keep the
+  state their thresholds give.
 
 ## 0.1.1 - 2026-04-27
 ### Fixed

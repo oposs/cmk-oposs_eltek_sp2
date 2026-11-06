@@ -427,11 +427,27 @@ def test_vanished_data_gives_no_result(check, name):
     assert list(getattr(check, f"check_oposs_eltek_sp2_{name}")({})) == []
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError,
-                   reason="BUG: a status code outside the MIB enum crashes the check (KeyError)")
 def test_unknown_status_code_is_unknown(check):
     out = list(check.check_oposs_eltek_sp2_power_system_status(_section(check, status=[["20"]])))
-    assert _state(out) == State.UNKNOWN
+    assert out == [Result(state=State.UNKNOWN, summary="status unknown(20)")]
+
+
+def test_unknown_rectifier_status_code_is_unknown(check):
+    rows = [["99", "138", "232", "Flatpack2 48/2000 HE", "113871234567 "]]
+    out = list(check.check_oposs_eltek_sp2_rectifier_status(RECTIFIER_1, _section(check, rectifiers=rows)))
+    assert _results(out) == [
+        Result(state=State.UNKNOWN, summary="Output Current 13.80 A / Input Voltage 232 V (status unknown(99))"),
+    ]
+
+
+def test_unknown_status_code_in_a_level_check_is_shown(check):
+    # The level checks take their state from the thresholds alone, so an
+    # unknown device status is only reported, as any other device status.
+    out = list(check.check_oposs_eltek_sp2_load_current(_section(check, load=[["42", "270", "1500", "1300"]])))
+    assert _results(out) == [
+        Result(state=State.OK, summary="Load Current: 27.00 A"),
+        Result(state=State.OK, summary="status unknown(42)"),
+    ]
 
 
 @pytest.mark.xfail(strict=True, raises=ValueError,

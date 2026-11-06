@@ -43,12 +43,15 @@ stateMap = {
 }
 
 
+# A code outside the MIB's ErrorStatus enum is UNKNOWN, not a crash.
 def stateValue(data: str) -> State:
-    return State.UNKNOWN if data == "" else stateMap[data][0]
+    return State.UNKNOWN if data not in stateMap else stateMap[data][0]
 
 
 def stateInfo(data: str) -> str:
-    return "No Data" if data == "" else stateMap[data][1]
+    if data == "":
+        return "No Data"
+    return stateMap[data][1] if data in stateMap else f"unknown({data})"
 
 
 MODE_MAP = {
