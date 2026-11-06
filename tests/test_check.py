@@ -378,6 +378,14 @@ def test_load_current_levels(check, value, state):
     assert _state(list(check.check_oposs_eltek_sp2_load_current(section))) == state
 
 
+@pytest.mark.xfail(strict=True, reason="BUG: threshold text repeats the device status: "
+                                       "'warn/crit at 260 V (status normal)/275 V (status normal)'")
+def test_threshold_text_shows_plain_levels(check):
+    out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=_mains("265"))))
+    (result,) = _results(out)
+    assert result.state == State.WARN
+    assert "(warn/crit at 260 V/275 V)" in result.summary
+
 
 # ---------------------------------------------------------------------------
 # Missing items and garbage from the device
@@ -392,4 +400,23 @@ def test_vanished_items_give_no_result(check):
 @pytest.mark.parametrize("name", SINGLE_SERVICES)
 def test_vanished_data_gives_no_result(check, name):
     assert list(getattr(check, f"check_oposs_eltek_sp2_{name}")({})) == []
+
+
+@pytest.mark.xfail(strict=True, raises=KeyError,
+                   reason="BUG: a status code outside the MIB enum crashes the check (KeyError)")
+def test_unknown_status_code_is_unknown(check):
+    out = list(check.check_oposs_eltek_sp2_power_system_status(_section(check, status=[["20"]])))
+    assert _state(out) == State.UNKNOWN
+
+
+@pytest.mark.xfail(strict=True, raises=ValueError,
+                   reason="BUG: an empty value from SNMP (missing OID) crashes the check (ValueError)")
+@pytest.mark.parametrize("name, override", [
+    ("mains_failure", {"failure": [[""]]}),
+    ("rectifier_current", {"current": [["1", "", "1000", "1200"]]}),
+    ("rectifier_temperature", {"temperature": [["1", "28", "60", "50", "", ""]]}),
+])
+def test_empty_snmp_value_does_not_crash(check, name, override):
+    out = list(getattr(check, f"check_oposs_eltek_sp2_{name}")(_section(check, **override)))
+    assert _results(out)
 
