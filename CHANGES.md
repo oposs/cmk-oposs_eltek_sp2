@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Power System Status and Rectifier Status now go UNKNOWN with "status
   unknown(<code>)"; the measuring services show the same text and keep the
   state their thresholds give.
+- Every service except Power System Status, Power System Mode and Number of
+  Rectifiers crashed when the device left a value or threshold empty, for
+  example a temperature without lower alarm levels. The service now goes
+  UNKNOWN and names what is missing, as in "Device sent no valid lower
+  warning level, lower critical level (status normal)".
 
 ## 0.1.1 - 2026-04-27
 ### Fixed

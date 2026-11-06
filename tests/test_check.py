@@ -450,16 +450,30 @@ def test_unknown_status_code_in_a_level_check_is_shown(check):
     ]
 
 
-@pytest.mark.xfail(strict=True, raises=ValueError,
-                   reason="BUG: an empty value from SNMP (missing OID) crashes the check (ValueError)")
-@pytest.mark.parametrize("name, override", [
-    ("mains_failure", {"failure": [[""]]}),
-    ("rectifier_current", {"current": [["1", "", "1000", "1200"]]}),
-    ("rectifier_temperature", {"temperature": [["1", "28", "60", "50", "", ""]]}),
+@pytest.mark.parametrize("name, item, override, summary", [
+    ("mains_failure", None, {"failure": [[""]]}, "Device sent no valid value"),
+    ("mains_voltage", "Mains Voltage 1",
+     {"mains": [["1", "Mains Voltage 1", "", "260", "275", "200", "185"]]},
+     "Device sent no valid value (status normal)"),
+    ("rectifier_current", None, {"current": [["1", "", "1000", "1200"]]},
+     "Device sent no valid value (status normal)"),
+    ("rectifier_capacity", None, {"capacity": [["1", "35", "", "80"]]},
+     "Device sent no valid upper critical level (status normal)"),
+    ("rectifier_errors", None, {"errors": [["1", "0", "2", "x"]]},
+     "Device sent no valid upper warning level (status normal)"),
+    ("rectifier_temperature", None, {"temperature": [["1", "28", "60", "50", "", ""]]},
+     "Device sent no valid lower warning level, lower critical level (status normal)"),
+    ("rectifier_status", RECTIFIER_1,
+     {"rectifiers": [["2", "", "232", "Flatpack2 48/2000 HE", "113871234567 "]]},
+     "Device sent no valid output current (status minorAlarm)"),
+    ("load_current", None, {"load": [["", "", "", ""]]},
+     "Device sent no valid value, upper warning level, upper critical level (status No Data)"),
 ])
-def test_empty_snmp_value_does_not_crash(check, name, override):
-    out = list(getattr(check, f"check_oposs_eltek_sp2_{name}")(_section(check, **override)))
-    assert _results(out)
+def test_empty_snmp_value_is_unknown(check, name, item, override, summary):
+    function = getattr(check, f"check_oposs_eltek_sp2_{name}")
+    section = _section(check, **override)
+    out = list(function(item, section) if item else function(section))
+    assert out == [Result(state=State.UNKNOWN, summary=summary)]
 
 # ---------------------------------------------------------------------------
 # Release version

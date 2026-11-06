@@ -54,6 +54,35 @@ def stateInfo(data: str) -> str:
     return stateMap[data][1] if data in stateMap else f"unknown({data})"
 
 
+# What the device's values are called in the service summary.
+FIELD_NAMES = {
+    "value": "value",
+    "warnUp": "upper warning level",
+    "critUp": "upper critical level",
+    "warnLow": "lower warning level",
+    "critLow": "lower critical level",
+    "outI": "output current",
+    "inU": "input voltage",
+}
+
+
+def invalid_values(data: dict[str, str], *keys: str) -> Result | None:
+    """UNKNOWN when one of the values is not a number.
+
+    An OID the device does not answer comes back as an empty string.
+    """
+    bad = []
+    for key in keys:
+        try:
+            float(data[key])
+        except ValueError:
+            bad.append(FIELD_NAMES[key])
+    if not bad:
+        return None
+    status = f" (status {stateInfo(data['state'])})" if "state" in data else ""
+    return Result(state=State.UNKNOWN, summary=f"Device sent no valid {', '.join(bad)}{status}")
+
+
 MODE_MAP = {
     "0": "off",
     "1": "test",
@@ -305,6 +334,9 @@ def check_oposs_eltek_sp2_mains_voltage(
     data = section.get("mains_voltage", {}).get(item)
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp", "warnLow", "critLow"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
@@ -344,6 +376,9 @@ def check_oposs_eltek_sp2_mains_failure(
 ) -> CheckResult:
     data = section.get("mains_failure")
     if not data:
+        return
+    if invalid := invalid_values(data, "value"):
+        yield invalid
         return
     value = float(data["value"])
     if value > 1:
@@ -416,6 +451,9 @@ def check_oposs_eltek_sp2_rectifier_current(
     data = section.get("rectifier_current")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]) / 10.0,
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
@@ -454,6 +492,9 @@ def check_oposs_eltek_sp2_rectifier_capacity(
 ) -> CheckResult:
     data = section.get("rectifier_capacity")
     if not data:
+        return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
         return
     yield from check_levels(
         value=float(data["value"]),
@@ -494,6 +535,9 @@ def check_oposs_eltek_sp2_rectifier_errors(
     data = section.get("rectifier_errors")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
@@ -532,6 +576,9 @@ def check_oposs_eltek_sp2_rectifier_temperature(
 ) -> CheckResult:
     data = section.get("rectifier_temperature")
     if not data:
+        return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp", "warnLow", "critLow"):
+        yield invalid
         return
     yield from check_levels(
         value=float(data["value"]),
@@ -573,6 +620,9 @@ def check_oposs_eltek_sp2_rectifier_status(
     data = section.get("rectifier_status", {}).get(item)
     if not data:
         return
+    if invalid := invalid_values(data, "outI", "inU"):
+        yield invalid
+        return
     yield Result(
         state=stateValue(data["state"]),
         summary="Output Current {:.2f} A / Input Voltage {:.0f} V (status {})".format(float(data["outI"]) / 10.0, float(data["inU"]), stateInfo(data["state"])),
@@ -612,6 +662,9 @@ def check_oposs_eltek_sp2_load_current(
 ) -> CheckResult:
     data = section.get("load_current")
     if not data:
+        return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
         return
     yield from check_levels(
         value=float(data["value"]) / 10.0,
