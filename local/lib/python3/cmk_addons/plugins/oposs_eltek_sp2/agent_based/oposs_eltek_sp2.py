@@ -14,6 +14,10 @@ from cmk.agent_based.v2 import (
     startswith,
 )
 
+# Create release PR writes the released version here (version_files in
+# .github/repo-infra.json)
+__version__ = "0.1.1"
+
 # State mapping from SNMP status values
 stateMap = {
     "0": (State.CRIT, "error"),
