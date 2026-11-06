@@ -7,7 +7,6 @@ import sys
 import pytest
 from cmk.agent_based.v2 import CheckPlugin, Metric
 from cmk.graphing.v1 import graphs, metrics, perfometers, translations
-
 from test_check import RECTIFIER_1, SINGLE_SERVICES, _section
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent

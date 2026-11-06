@@ -12,7 +12,6 @@ itself is configured with.
 """
 
 import importlib.util
-import json
 import pathlib
 import re
 import sys
