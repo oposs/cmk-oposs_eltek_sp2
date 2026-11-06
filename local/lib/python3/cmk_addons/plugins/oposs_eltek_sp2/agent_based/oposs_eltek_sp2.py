@@ -43,12 +43,44 @@ stateMap = {
 }
 
 
+# A code outside the MIB's ErrorStatus enum is UNKNOWN, not a crash.
 def stateValue(data: str) -> State:
-    return State.UNKNOWN if data == "" else stateMap[data][0]
+    return State.UNKNOWN if data not in stateMap else stateMap[data][0]
 
 
 def stateInfo(data: str) -> str:
-    return "No Data" if data == "" else stateMap[data][1]
+    if data == "":
+        return "No Data"
+    return stateMap[data][1] if data in stateMap else f"unknown({data})"
+
+
+# What the device's values are called in the service summary.
+FIELD_NAMES = {
+    "value": "value",
+    "warnUp": "upper warning level",
+    "critUp": "upper critical level",
+    "warnLow": "lower warning level",
+    "critLow": "lower critical level",
+    "outI": "output current",
+    "inU": "input voltage",
+}
+
+
+def invalid_values(data: dict[str, str], *keys: str) -> Result | None:
+    """UNKNOWN when one of the values is not a number.
+
+    An OID the device does not answer comes back as an empty string.
+    """
+    bad = []
+    for key in keys:
+        try:
+            float(data[key])
+        except ValueError:
+            bad.append(FIELD_NAMES[key])
+    if not bad:
+        return None
+    status = f" (status {stateInfo(data['state'])})" if "state" in data else ""
+    return Result(state=State.UNKNOWN, summary=f"Device sent no valid {', '.join(bad)}{status}")
 
 
 MODE_MAP = {
@@ -302,15 +334,21 @@ def check_oposs_eltek_sp2_mains_voltage(
     data = section.get("mains_voltage", {}).get(item)
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp", "warnLow", "critLow"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_voltage",
-        render_func=lambda v: "{:.0f} V (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} V",
         label="Mains Voltage",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_mains_voltage = CheckPlugin(
@@ -338,6 +376,9 @@ def check_oposs_eltek_sp2_mains_failure(
 ) -> CheckResult:
     data = section.get("mains_failure")
     if not data:
+        return
+    if invalid := invalid_values(data, "value"):
+        yield invalid
         return
     value = float(data["value"])
     if value > 1:
@@ -410,14 +451,20 @@ def check_oposs_eltek_sp2_rectifier_current(
     data = section.get("rectifier_current")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]) / 10.0,
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.2f} A",
         label="Rectifier Current",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_current = CheckPlugin(
@@ -446,14 +493,20 @@ def check_oposs_eltek_sp2_rectifier_capacity(
     data = section.get("rectifier_capacity")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_capacity_pct",
-        render_func=lambda v: "{:.0f} % (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} %",
         label="Rectifier Capacity",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_capacity = CheckPlugin(
@@ -482,14 +535,20 @@ def check_oposs_eltek_sp2_rectifier_errors(
     data = section.get("rectifier_errors")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_errors",
-        render_func=lambda v: "{:.0f} Errors (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} Errors",
         label="Rectifier Errors",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_errors = CheckPlugin(
@@ -518,15 +577,21 @@ def check_oposs_eltek_sp2_rectifier_temperature(
     data = section.get("rectifier_temperature")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp", "warnLow", "critLow"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]),
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_temperature",
-        render_func=lambda v: "{:.0f} C (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} C",
         label="Rectifier Temperature",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_temperature = CheckPlugin(
@@ -554,6 +619,9 @@ def check_oposs_eltek_sp2_rectifier_status(
 ) -> CheckResult:
     data = section.get("rectifier_status", {}).get(item)
     if not data:
+        return
+    if invalid := invalid_values(data, "outI", "inU"):
+        yield invalid
         return
     yield Result(
         state=stateValue(data["state"]),
@@ -595,14 +663,20 @@ def check_oposs_eltek_sp2_load_current(
     data = section.get("load_current")
     if not data:
         return
+    if invalid := invalid_values(data, "value", "warnUp", "critUp"):
+        yield invalid
+        return
     yield from check_levels(
         value=float(data["value"]) / 10.0,
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.2f} A",
         label="Load Current",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_load_current = CheckPlugin(

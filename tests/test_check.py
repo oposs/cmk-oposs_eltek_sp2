@@ -261,7 +261,10 @@ def test_rectifier_count(check):
 
 def test_mains_voltage_ok(check):
     out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 2", _section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Mains Voltage: 229 V (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Mains Voltage: 229 V"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_voltage", 229.0, levels=(260.0, 275.0), boundaries=(185.0, 275.0)),
     ]
@@ -269,7 +272,10 @@ def test_mains_voltage_ok(check):
 
 def test_rectifier_current_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_current(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Current: 27.60 A (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Current: 27.60 A"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_current", 27.6, levels=(100.0, 120.0), boundaries=(0.0, 144.0)),
     ]
@@ -277,7 +283,10 @@ def test_rectifier_current_ok(check):
 
 def test_rectifier_capacity_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_capacity(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Capacity: 35 % (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Capacity: 35 %"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_capacity_pct", 35.0, levels=(80.0, 90.0), boundaries=(0.0, 108.0)),
     ]
@@ -285,7 +294,10 @@ def test_rectifier_capacity_ok(check):
 
 def test_rectifier_errors_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_errors(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Errors: 0 Errors (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Errors: 0 Errors"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_errors", 0.0, levels=(1.0, 2.0), boundaries=(0.0, 2.4)),
     ]
@@ -293,7 +305,10 @@ def test_rectifier_errors_ok(check):
 
 def test_rectifier_temperature_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_temperature(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Temperature: 28 C (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Temperature: 28 C"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_temperature", 28.0, levels=(50.0, 60.0), boundaries=(0.0, 60.0)),
     ]
@@ -301,7 +316,10 @@ def test_rectifier_temperature_ok(check):
 
 def test_load_current_ok(check):
     out = list(check.check_oposs_eltek_sp2_load_current(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Load Current: 27.00 A (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Load Current: 27.00 A"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_current", 27.0, levels=(130.0, 150.0), boundaries=(0.0, 180.0)),
     ]
@@ -378,13 +396,20 @@ def test_load_current_levels(check, value, state):
     assert _state(list(check.check_oposs_eltek_sp2_load_current(section))) == state
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: threshold text repeats the device status: "
-                                       "'warn/crit at 260 V (status normal)/275 V (status normal)'")
 def test_threshold_text_shows_plain_levels(check):
     out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=_mains("265"))))
-    (result,) = _results(out)
-    assert result.state == State.WARN
-    assert "(warn/crit at 260 V/275 V)" in result.summary
+    assert _results(out) == [
+        Result(state=State.WARN, summary="Mains Voltage: 265 V (warn/crit at 260 V/275 V)"),
+        Result(state=State.OK, summary="status normal"),
+    ]
+
+
+def test_device_status_does_not_change_the_state(check):
+    # The level checks take their state from the thresholds alone.
+    rows = [["3", "Mains Voltage 1", "231", "260", "275", "200", "185"]]
+    out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=rows)))
+    assert _results(out)[-1] == Result(state=State.OK, summary="status majorAlarm")
+    assert _state(out) == State.OK
 
 
 # ---------------------------------------------------------------------------
@@ -402,23 +427,53 @@ def test_vanished_data_gives_no_result(check, name):
     assert list(getattr(check, f"check_oposs_eltek_sp2_{name}")({})) == []
 
 
-@pytest.mark.xfail(strict=True, raises=KeyError,
-                   reason="BUG: a status code outside the MIB enum crashes the check (KeyError)")
 def test_unknown_status_code_is_unknown(check):
     out = list(check.check_oposs_eltek_sp2_power_system_status(_section(check, status=[["20"]])))
-    assert _state(out) == State.UNKNOWN
+    assert out == [Result(state=State.UNKNOWN, summary="status unknown(20)")]
 
 
-@pytest.mark.xfail(strict=True, raises=ValueError,
-                   reason="BUG: an empty value from SNMP (missing OID) crashes the check (ValueError)")
-@pytest.mark.parametrize("name, override", [
-    ("mains_failure", {"failure": [[""]]}),
-    ("rectifier_current", {"current": [["1", "", "1000", "1200"]]}),
-    ("rectifier_temperature", {"temperature": [["1", "28", "60", "50", "", ""]]}),
+def test_unknown_rectifier_status_code_is_unknown(check):
+    rows = [["99", "138", "232", "Flatpack2 48/2000 HE", "113871234567 "]]
+    out = list(check.check_oposs_eltek_sp2_rectifier_status(RECTIFIER_1, _section(check, rectifiers=rows)))
+    assert _results(out) == [
+        Result(state=State.UNKNOWN, summary="Output Current 13.80 A / Input Voltage 232 V (status unknown(99))"),
+    ]
+
+
+def test_unknown_status_code_in_a_level_check_is_shown(check):
+    # The level checks take their state from the thresholds alone, so an
+    # unknown device status is only reported, as any other device status.
+    out = list(check.check_oposs_eltek_sp2_load_current(_section(check, load=[["42", "270", "1500", "1300"]])))
+    assert _results(out) == [
+        Result(state=State.OK, summary="Load Current: 27.00 A"),
+        Result(state=State.OK, summary="status unknown(42)"),
+    ]
+
+
+@pytest.mark.parametrize("name, item, override, summary", [
+    ("mains_failure", None, {"failure": [[""]]}, "Device sent no valid value"),
+    ("mains_voltage", "Mains Voltage 1",
+     {"mains": [["1", "Mains Voltage 1", "", "260", "275", "200", "185"]]},
+     "Device sent no valid value (status normal)"),
+    ("rectifier_current", None, {"current": [["1", "", "1000", "1200"]]},
+     "Device sent no valid value (status normal)"),
+    ("rectifier_capacity", None, {"capacity": [["1", "35", "", "80"]]},
+     "Device sent no valid upper critical level (status normal)"),
+    ("rectifier_errors", None, {"errors": [["1", "0", "2", "x"]]},
+     "Device sent no valid upper warning level (status normal)"),
+    ("rectifier_temperature", None, {"temperature": [["1", "28", "60", "50", "", ""]]},
+     "Device sent no valid lower warning level, lower critical level (status normal)"),
+    ("rectifier_status", RECTIFIER_1,
+     {"rectifiers": [["2", "", "232", "Flatpack2 48/2000 HE", "113871234567 "]]},
+     "Device sent no valid output current (status minorAlarm)"),
+    ("load_current", None, {"load": [["", "", "", ""]]},
+     "Device sent no valid value, upper warning level, upper critical level (status No Data)"),
 ])
-def test_empty_snmp_value_does_not_crash(check, name, override):
-    out = list(getattr(check, f"check_oposs_eltek_sp2_{name}")(_section(check, **override)))
-    assert _results(out)
+def test_empty_snmp_value_is_unknown(check, name, item, override, summary):
+    function = getattr(check, f"check_oposs_eltek_sp2_{name}")
+    section = _section(check, **override)
+    out = list(function(item, section) if item else function(section))
+    assert out == [Result(state=State.UNKNOWN, summary=summary)]
 
 # ---------------------------------------------------------------------------
 # Release version
