@@ -308,9 +308,12 @@ def check_oposs_eltek_sp2_mains_voltage(
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_voltage",
-        render_func=lambda v: "{:.0f} V (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} V",
         label="Mains Voltage",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_mains_voltage = CheckPlugin(
@@ -415,9 +418,12 @@ def check_oposs_eltek_sp2_rectifier_current(
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.2f} A",
         label="Rectifier Current",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_current = CheckPlugin(
@@ -451,9 +457,12 @@ def check_oposs_eltek_sp2_rectifier_capacity(
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_capacity_pct",
-        render_func=lambda v: "{:.0f} % (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} %",
         label="Rectifier Capacity",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_capacity = CheckPlugin(
@@ -487,9 +496,12 @@ def check_oposs_eltek_sp2_rectifier_errors(
         levels_upper=("fixed", (float(data["warnUp"]), float(data["critUp"]))),
         boundaries=(0.0, 1.2 * float(data["critUp"])),
         metric_name="oposs_eltek_errors",
-        render_func=lambda v: "{:.0f} Errors (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} Errors",
         label="Rectifier Errors",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_errors = CheckPlugin(
@@ -524,9 +536,12 @@ def check_oposs_eltek_sp2_rectifier_temperature(
         levels_lower=("fixed", (float(data["warnLow"]), float(data["critLow"]))),
         boundaries=(float(data["critLow"]), float(data["critUp"])),
         metric_name="oposs_eltek_temperature",
-        render_func=lambda v: "{:.0f} C (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.0f} C",
         label="Rectifier Temperature",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_rectifier_temperature = CheckPlugin(
@@ -600,9 +615,12 @@ def check_oposs_eltek_sp2_load_current(
         levels_upper=("fixed", (float(data["warnUp"]) / 10.0, float(data["critUp"]) / 10.0)),
         boundaries=(0.0, 1.2 * float(data["critUp"]) / 10.0),
         metric_name="oposs_eltek_current",
-        render_func=lambda v: "{:.2f} A (status {})".format(v, stateInfo(data["state"])),
+        render_func=lambda v: f"{v:.2f} A",
         label="Load Current",
     )
+    # The device status is shown on its own: check_levels also renders
+    # the levels with render_func, and the thresholds have no status.
+    yield Result(state=State.OK, summary=f"status {stateInfo(data['state'])}")
 
 
 check_plugin_oposs_eltek_sp2_load_current = CheckPlugin(

@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   text, which contradicted them.
 
 ### Fixed
+- Mains Voltage, Rectifier Current, Rectifier Capacity, Rectifier Errors,
+  Rectifier Temperature and Load Current in WARN or CRIT showed the device
+  status after each threshold, as in "warn/crit at 260 V (status
+  normal)/275 V (status normal)". The thresholds now read "warn/crit at
+  260 V/275 V", and the device status follows once, as "status normal".
 
 ## 0.1.1 - 2026-04-27
 ### Fixed

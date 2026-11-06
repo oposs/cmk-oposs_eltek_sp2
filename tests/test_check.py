@@ -261,7 +261,10 @@ def test_rectifier_count(check):
 
 def test_mains_voltage_ok(check):
     out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 2", _section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Mains Voltage: 229 V (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Mains Voltage: 229 V"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_voltage", 229.0, levels=(260.0, 275.0), boundaries=(185.0, 275.0)),
     ]
@@ -269,7 +272,10 @@ def test_mains_voltage_ok(check):
 
 def test_rectifier_current_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_current(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Current: 27.60 A (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Current: 27.60 A"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_current", 27.6, levels=(100.0, 120.0), boundaries=(0.0, 144.0)),
     ]
@@ -277,7 +283,10 @@ def test_rectifier_current_ok(check):
 
 def test_rectifier_capacity_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_capacity(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Capacity: 35 % (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Capacity: 35 %"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_capacity_pct", 35.0, levels=(80.0, 90.0), boundaries=(0.0, 108.0)),
     ]
@@ -285,7 +294,10 @@ def test_rectifier_capacity_ok(check):
 
 def test_rectifier_errors_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_errors(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Errors: 0 Errors (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Errors: 0 Errors"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_errors", 0.0, levels=(1.0, 2.0), boundaries=(0.0, 2.4)),
     ]
@@ -293,7 +305,10 @@ def test_rectifier_errors_ok(check):
 
 def test_rectifier_temperature_ok(check):
     out = list(check.check_oposs_eltek_sp2_rectifier_temperature(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Rectifier Temperature: 28 C (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Rectifier Temperature: 28 C"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_temperature", 28.0, levels=(50.0, 60.0), boundaries=(0.0, 60.0)),
     ]
@@ -301,7 +316,10 @@ def test_rectifier_temperature_ok(check):
 
 def test_load_current_ok(check):
     out = list(check.check_oposs_eltek_sp2_load_current(_section(check)))
-    assert _results(out) == [Result(state=State.OK, summary="Load Current: 27.00 A (status normal)")]
+    assert _results(out) == [
+        Result(state=State.OK, summary="Load Current: 27.00 A"),
+        Result(state=State.OK, summary="status normal"),
+    ]
     assert _metrics(out) == [
         Metric("oposs_eltek_current", 27.0, levels=(130.0, 150.0), boundaries=(0.0, 180.0)),
     ]
@@ -378,13 +396,20 @@ def test_load_current_levels(check, value, state):
     assert _state(list(check.check_oposs_eltek_sp2_load_current(section))) == state
 
 
-@pytest.mark.xfail(strict=True, reason="BUG: threshold text repeats the device status: "
-                                       "'warn/crit at 260 V (status normal)/275 V (status normal)'")
 def test_threshold_text_shows_plain_levels(check):
     out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=_mains("265"))))
-    (result,) = _results(out)
-    assert result.state == State.WARN
-    assert "(warn/crit at 260 V/275 V)" in result.summary
+    assert _results(out) == [
+        Result(state=State.WARN, summary="Mains Voltage: 265 V (warn/crit at 260 V/275 V)"),
+        Result(state=State.OK, summary="status normal"),
+    ]
+
+
+def test_device_status_does_not_change_the_state(check):
+    # The level checks take their state from the thresholds alone.
+    rows = [["3", "Mains Voltage 1", "231", "260", "275", "200", "185"]]
+    out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=rows)))
+    assert _results(out)[-1] == Result(state=State.OK, summary="status majorAlarm")
+    assert _state(out) == State.OK
 
 
 # ---------------------------------------------------------------------------
