@@ -18,7 +18,7 @@ import re
 import sys
 
 import pytest
-from cmk.agent_based.v2 import Metric, Result, Service, State
+from cmk.agent_based.v2 import Metric, OIDEnd, Result, Service, State
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CHECK = ROOT / "local/lib/python3/cmk_addons/plugins/oposs_eltek_sp2/agent_based/oposs_eltek_sp2.py"
@@ -46,11 +46,12 @@ def _tables(**override):
         # 2.3.0 powerSystemMode: float
         "mode": [["3"]],
         # 3.4.1 mains voltage table: status, description, value,
-        # minor high (warn), major high (crit), minor low (warn), major low (crit)
+        # minor high (warn), major high (crit), minor low (warn), major low (crit),
+        # row index
         "mains": [
-            ["1", "Mains Voltage 1", "231", "260", "275", "200", "185"],
-            ["1", "Mains Voltage 2", "229", "260", "275", "200", "185"],
-            ["1", "Mains Voltage 3", "233", "260", "275", "200", "185"],
+            ["1", "Mains Voltage 1", "231", "260", "275", "200", "185", "1"],
+            ["1", "Mains Voltage 2", "229", "260", "275", "200", "185", "2"],
+            ["1", "Mains Voltage 3", "233", "260", "275", "200", "185", "3"],
         ],
         # 3.2.5.0 number of failed mains phases
         "failure": [["0"]],
@@ -178,6 +179,41 @@ def test_one_mains_voltage_service_per_phase(check):
     found = list(check.discover_oposs_eltek_sp2_mains_voltage(_section(check)))
     assert found == [Service(item=f"Mains Voltage {n}") for n in (1, 2, 3)]
     assert list(check.discover_oposs_eltek_sp2_mains_voltage({})) == []
+
+
+def test_mains_fetch_carries_the_row_index(check):
+    tree = check.snmp_section_oposs_eltek_sp2.fetch[2]
+    assert tree.base == ".1.3.6.1.4.1.12148.10.3.4.1"
+    assert len(tree.oids) == 8
+    assert isinstance(tree.oids[-1], OIDEnd)
+
+
+# A device that calls all three inputs "Mains", listed out of index order.
+# The phase with index 2 has failed.
+EQUAL_MAINS = [
+    ["1", "Mains", "233", "260", "275", "200", "185", "3"],
+    ["1", "Mains", "231", "260", "275", "200", "185", "1"],
+    ["0", "Mains", "150", "260", "275", "200", "185", "2"],
+    ["1", "Battery Room", "230", "260", "275", "200", "185", "4"],
+]
+
+
+def test_mains_with_equal_descriptions_are_all_monitored(check):
+    section = _section(check, mains=EQUAL_MAINS)
+    found = list(check.discover_oposs_eltek_sp2_mains_voltage(section))
+    assert sorted(s.item for s in found) == ["Battery Room", "Mains 1", "Mains 2", "Mains 3"]
+    out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains 2", section))
+    assert _results(out)[0] == Result(
+        state=State.CRIT, summary="Mains Voltage: 150 V (warn/crit below 200 V/185 V)",
+    )
+    assert _results(out)[-1] == Result(state=State.OK, summary="status error")
+
+
+def test_mains_number_follows_the_index_not_the_order(check):
+    forward = _section(check, mains=EQUAL_MAINS)["mains_voltage"]
+    backward = _section(check, mains=EQUAL_MAINS[::-1])["mains_voltage"]
+    assert forward == backward
+    assert forward["Mains 3"]["value"] == "233"
 
 
 def test_one_rectifier_status_service_per_rectifier(check):
@@ -346,7 +382,7 @@ def test_rectifier_status_follows_the_device(check, value, state):
 # ---------------------------------------------------------------------------
 
 def _mains(value):
-    return [["1", "Mains Voltage 1", value, "260", "275", "200", "185"]]
+    return [["1", "Mains Voltage 1", value, "260", "275", "200", "185", "1"]]
 
 
 @pytest.mark.parametrize("value, state", [
@@ -406,7 +442,7 @@ def test_threshold_text_shows_plain_levels(check):
 
 def test_device_status_does_not_change_the_state(check):
     # The level checks take their state from the thresholds alone.
-    rows = [["3", "Mains Voltage 1", "231", "260", "275", "200", "185"]]
+    rows = [["3", "Mains Voltage 1", "231", "260", "275", "200", "185", "1"]]
     out = list(check.check_oposs_eltek_sp2_mains_voltage("Mains Voltage 1", _section(check, mains=rows)))
     assert _results(out)[-1] == Result(state=State.OK, summary="status majorAlarm")
     assert _state(out) == State.OK
@@ -453,7 +489,7 @@ def test_unknown_status_code_in_a_level_check_is_shown(check):
 @pytest.mark.parametrize("name, item, override, summary", [
     ("mains_failure", None, {"failure": [[""]]}, "Device sent no valid value"),
     ("mains_voltage", "Mains Voltage 1",
-     {"mains": [["1", "Mains Voltage 1", "", "260", "275", "200", "185"]]},
+     {"mains": [["1", "Mains Voltage 1", "", "260", "275", "200", "185", "1"]]},
      "Device sent no valid value (status normal)"),
     ("rectifier_current", None, {"current": [["1", "", "1000", "1200"]]},
      "Device sent no valid value (status normal)"),
