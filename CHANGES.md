@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 ### Fixed
+- Graphs of the Rectifier Status services started empty after the move from
+  the old oegig-plugins `eltek_sp2` check: the output current and input voltage
+  recorded before were not shown. They are now shown as one continuous line
+  with the new values, after `cmk -R`.
 
 ## 0.3.0 - 2026-11-11
 ### Changed

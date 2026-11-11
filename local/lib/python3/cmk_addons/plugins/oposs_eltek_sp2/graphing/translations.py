@@ -69,3 +69,13 @@ translation_oposs_eltek_sp2_load_current = translations.Translation(
         "current": translations.RenameTo("oposs_eltek_current"),
     },
 )
+
+# Rectifier Status wrote both values of a rectifier under the generic names.
+translation_oposs_eltek_sp2_rectifier_status = translations.Translation(
+    name="oposs_eltek_sp2_rectifier_status",
+    check_commands=[translations.PassiveCheck("oposs_eltek_sp2_rectifier_status")],
+    translations={
+        "current": translations.RenameTo("oposs_eltek_current"),
+        "voltage": translations.RenameTo("oposs_eltek_voltage"),
+    },
+)
