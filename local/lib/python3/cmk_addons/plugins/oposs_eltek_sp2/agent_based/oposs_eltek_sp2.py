@@ -5,6 +5,7 @@ from cmk.agent_based.v2 import (
     CheckResult,
     DiscoveryResult,
     Metric,
+    OIDEnd,
     Result,
     Service,
     SNMPSection,
@@ -109,20 +110,24 @@ def parse_oposs_eltek_sp2(string_table: list) -> dict[str, Any]:
     if string_table[1] and string_table[1][0]:
         section["power_system_mode"] = {"mode": string_table[1][0][0]}
 
-    # 2: Mains Voltage - table (multiple rows)
+    # 2: Mains Voltage - table (multiple rows), the row index comes last.
+    # The description is the item. Inputs that share a description each
+    # get their row index appended, so none of them hides the others and
+    # the item does not depend on the order the device lists them in.
+    rows = [row for row in string_table[2] if len(row) >= 8]
+    descs = [row[1].strip() for row in rows]
     mains = {}
-    for row in string_table[2]:
-        if len(row) >= 7:
-            desc = row[1].strip()
-            mains[desc] = {
-                "state": row[0],
-                "desc": desc,
-                "value": row[2],
-                "warnUp": row[3],
-                "critUp": row[4],
-                "warnLow": row[5],
-                "critLow": row[6],
-            }
+    for row, desc in zip(rows, descs):
+        item = desc if descs.count(desc) == 1 else f"{desc} {row[7]}".strip()
+        mains[item] = {
+            "state": row[0],
+            "desc": desc,
+            "value": row[2],
+            "warnUp": row[3],
+            "critUp": row[4],
+            "warnLow": row[5],
+            "critLow": row[6],
+        }
     if mains:
         section["mains_voltage"] = mains
 
@@ -221,7 +226,7 @@ snmp_section_oposs_eltek_sp2 = SNMPSection(
         # 2: Mains Voltage Table
         SNMPTree(
             base=OB + "3.4.1",
-            oids=["2", "3", "6", "8", "7", "9", "10"],
+            oids=["2", "3", "6", "8", "7", "9", "10", OIDEnd()],
         ),
         # 3: Mains Failure
         SNMPTree(base=OB + "3.2", oids=["5.0"]),
