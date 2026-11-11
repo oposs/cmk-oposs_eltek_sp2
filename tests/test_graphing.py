@@ -20,6 +20,13 @@ LEGACY = {
     "oposs_eltek_sp2_rectifier_errors": {"errors": "oposs_eltek_errors"},
     "oposs_eltek_sp2_rectifier_temperature": {"temperature": "oposs_eltek_temperature"},
     "oposs_eltek_sp2_load_current": {"current": "oposs_eltek_current"},
+    # Rectifier Status: the legacy plugin wrote both values of each
+    # rectifier as "current" and "voltage" (oegig-plugins eltek_sp2.py,
+    # OP-PROJECTS/litecom-checkmk-addons), item "<type> [<serial>]" as now.
+    "oposs_eltek_sp2_rectifier_status": {
+        "current": "oposs_eltek_current",
+        "voltage": "oposs_eltek_voltage",
+    },
 }
 
 
