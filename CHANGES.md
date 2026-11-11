@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### New
 
 ### Changed
+
+### Fixed
+
+## 0.3.0 - 2026-11-11
+### Changed
 - When several mains inputs had the same description, only one Mains Voltage
   service was created and it showed the last input, so an alarm on the
   others went unseen. Each of these inputs now gets its own service with its
@@ -17,8 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Mains 2"; inputs with a unique description keep their service name. Run a
   service discovery on affected hosts to pick up the new services and remove
   the old one.
-
-### Fixed
 
 ## 0.2.0 - 2026-11-07
 ### New
